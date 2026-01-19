@@ -75,15 +75,10 @@
       width: 100%;
       min-height: 240px;
       background: #0d1018;
-      color: #e6e8ec;
-      border: 1px solid #252c3c;
-      border-radius: 10px;
       padding: 12px;
       font-size: 13px;
       line-height: 1.5;
       resize: vertical;
-      outline: none;
-      transition: border 0.15s, box-shadow 0.15s;
     }
     textarea:focus {
       border-color: var(--accent);
@@ -93,6 +88,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 16px;
+      margin-top: 16px;
     }
     .field > header {
       display: flex;
@@ -198,6 +194,7 @@
       color: var(--muted);
       font-size: 12px;
     }
+    code-input { margin:0 !important}
   </style>
 </head>
 <body>
@@ -220,21 +217,29 @@
     <div class="grid">
       <div class="field">
         <header><h3>Setup HTML (add &lt;script&gt; tags for external scripts)</h3></header>
-        <textarea id="htmlInput" spellcheck="false"></textarea>
+        <code-input template="syntax-highlighted" language="JavaScript">
+          <textarea id="htmlInput" spellcheck="false" data-code-input-fallback></textarea>
+        </code-input>
       </div>
       <div class="field">
         <header><h3>Setup JS (runs before each case)</h3></header>
-        <textarea id="setupInput" spellcheck="false"></textarea>
+        <code-input template="syntax-highlighted" language="JavaScript">
+          <textarea id="setupInput" spellcheck="false" data-code-input-fallback></textarea>
+        </code-input>
       </div>
     </div>
     <div class="grid">
       <div class="field">
         <header><h3>Case 1</h3></header>
-        <textarea id="case1Input" spellcheck="false"></textarea>
+        <code-input template="syntax-highlighted" language="JavaScript">
+          <textarea id="case1Input" spellcheck="false" data-code-input-fallback></textarea>
+        </code-input>
       </div>
       <div class="field">
         <header><h3>Case 2</h3></header>
-        <textarea id="case2Input" spellcheck="false"></textarea>
+        <code-input template="syntax-highlighted" language="JavaScript">
+          <textarea id="case2Input" spellcheck="false" data-code-input-fallback></textarea>
+        </code-input>
       </div>
     </div>
   </div>
@@ -264,6 +269,18 @@
   </div>
 
   <iframe id="sandbox" sandbox="allow-scripts allow-same-origin" style="display:none;"></iframe>
+
+  <!--syntax highlighter stuff-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11/build/styles/atom-one-dark.min.css">
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11/build/languages/javascript.min.js"></script><!--languages-->
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11/build/languages/html.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/WebCoder49/code-input@2.8/code-input.min.js"></script><!--code-input.js-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/WebCoder49/code-input@2.8/code-input.min.css">
+
+  <script>
+    codeInput.registerTemplate("syntax-highlighted", new codeInput.templates.Hljs(hljs));
+  </script>
 
   <script>
     const htmlInput = document.getElementById("htmlInput");
