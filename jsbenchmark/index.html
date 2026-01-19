@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JS Micro Benchmark</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f1116;
+      --panel: #181c24;
+      --accent: #4cafef;
+      --text: #e6e8ec;
+      --muted: #9ba3b4;
+      --border: #2a3040;
+      --error: #ff7b7b;
+      --success: #4ade80;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 20% 20%, #1a1f2b, #0f1116 40%),
+                  radial-gradient(circle at 80% 0%, #1c2538, #0f1116 45%),
+                  #0f1116;
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    h1 {
+      margin: 0;
+      letter-spacing: 0.4px;
+      font-weight: 700;
+    }
+    .panel {
+      background: rgba(24, 28, 36, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 20px 70px rgba(0, 0, 0, 0.35);
+    }
+    .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    input[type="number"] {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 10px;
+      width: 120px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 240px;
+      background: #0d1018;
+      color: #e6e8ec;
+      border: 1px solid #252c3c;
+      border-radius: 10px;
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      transition: border 0.15s, box-shadow 0.15s;
+    }
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(76, 175, 239, 0.15);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .field > header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      gap: 10px;
+    }
+    .field h3 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: 0.3px;
+    }
+    button {
+      background: linear-gradient(120deg, #3a8bff, #6f7afe);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(67, 136, 255, 0.35);
+      transition: transform 0.1s ease, box-shadow 0.15s ease;
+    }
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 4px 15px rgba(67, 136, 255, 0.3);
+    }
+    button.secondary {
+      background: #212532;
+      color: var(--text);
+      box-shadow: none;
+      border: 1px solid var(--border);
+    }
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .card {
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: linear-gradient(150deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    }
+    .card.best {
+      border-color: rgba(74, 222, 128, 0.7);
+      box-shadow: 0 0 0 1px rgba(74, 222, 128, 0.35), 0 10px 30px rgba(0,0,0,0.35);
+    }
+    .metric {
+      font-size: 26px;
+      font-weight: 700;
+      margin: 0;
+    }
+    .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .badge {
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: #1e2433;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .badge.good {
+      color: var(--success);
+      border-color: rgba(74, 222, 128, 0.5);
+      background: rgba(74, 222, 128, 0.05);
+    }
+    .status {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 6px;
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .error {
+      color: var(--error);
+      margin-top: 8px;
+      white-space: pre-wrap;
+      border: 1px solid rgba(255, 123, 123, 0.4);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255, 123, 123, 0.08);
+    }
+    .footer {
+      color: var(--muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="top">
+    <div>
+      <h1>JS Benchmark</h1>
+      <div class="status">Define HTML + setup code, then benchmark Case 1 vs Case 2.</div>
+    </div>
+    <div class="controls">
+      <label>
+        Iterations
+        <input id="iterations" type="number" min="1" step="1" value="200">
+      </label>
+      <button id="run">Run benchmark</button>
+      <button id="share" class="secondary">Copy shareable link</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="grid">
+      <div class="field">
+        <header><h3>Setup HTML (add &lt;script&gt; tags for external scripts)</h3></header>
+        <textarea id="htmlInput" spellcheck="false"></textarea>
+      </div>
+      <div class="field">
+        <header><h3>Setup JS (runs before each case)</h3></header>
+        <textarea id="setupInput" spellcheck="false"></textarea>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="field">
+        <header><h3>Case 1</h3></header>
+        <textarea id="case1Input" spellcheck="false"></textarea>
+      </div>
+      <div class="field">
+        <header><h3>Case 2</h3></header>
+        <textarea id="case2Input" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="top" style="margin-bottom:8px;">
+      <div class="status">Results</div>
+      <div class="status mono" id="progress"></div>
+    </div>
+    <div id="results" class="results"></div>
+    <div id="errors" class="error" style="display:none;"></div>
+  </div>
+
+  <div class="footer">
+    Runs inside a sandboxed iframe. URL saves your current setup for sharing.
+  </div>
+
+  <div>
+    <h2>Why build another JS benchmark?</h2>
+    <p>I needed:</p>
+    <ul>
+      <li>A way to have initial HTML setup top test out DOM manipulations</li>
+      <li>Specify the number of iterations to run</li>
+      <li>A way to share the results quickly via URL</li>
+    </ul>
+    <p>All benchmarks have only 2 out of 3 required features. <u>jsbench.me</u> has HTML setup but no way to specify the number of iterations. <u>jsbenchmark.com</u> has iterations but no HTML, etc.</p>
+  </div>
+
+  <iframe id="sandbox" sandbox="allow-scripts allow-same-origin" style="display:none;"></iframe>
+
+  <script>
+    const htmlInput = document.getElementById("htmlInput");
+    const setupInput = document.getElementById("setupInput");
+    const case1Input = document.getElementById("case1Input");
+    const case2Input = document.getElementById("case2Input");
+    const iterationsInput = document.getElementById("iterations");
+    const runBtn = document.getElementById("run");
+    const shareBtn = document.getElementById("share");
+    const progressEl = document.getElementById("progress");
+    const resultsEl = document.getElementById("results");
+    const errorsEl = document.getElementById("errors");
+
+    const defaultState = {
+      html: '<script src="https://code.jquery.com/jquery-3.7.1.min.js"></scr' + `ipt>
+<ul id="list"></ul>`,
+      setup: `const html = "<div>Hello</div><div>World</div>";
+let _div = null;
+
+function stripHtml(html) { return new DOMParser().parseFromString(html, "text/html").body.textContent; }
+
+function stripHtml2(html) { _div = _div || document.createElement("div"); _div.innerHTML = html; return _div.textContent; }`,
+      case1: `stripHtml(html);`,
+      case2: `stripHtml2(html);`,
+      iterations: 200
+    };
+
+    function encodeState(state) {
+      return btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+    }
+    function decodeState(str) {
+      return JSON.parse(decodeURIComponent(escape(atob(str))));
+    }
+    function loadStateFromUrl() {
+      const hash = location.hash || "";
+      const match = hash.match(/b=([^&]+)/);
+      if (!match) return null;
+      try {
+        return decodeState(match[1]);
+      } catch (err) {
+        console.warn("Failed to decode state:", err);
+        return null;
+      }
+    }
+    function currentState() {
+      return {
+        html: htmlInput.value,
+        setup: setupInput.value,
+        case1: case1Input.value,
+        case2: case2Input.value,
+        iterations: Number(iterationsInput.value) || 1
+      };
+    }
+    function applyState(state) {
+      htmlInput.value = state.html;
+      setupInput.value = state.setup;
+      case1Input.value = state.case1;
+      case2Input.value = state.case2;
+      iterationsInput.value = state.iterations;
+    }
+    function syncUrl() {
+      const encoded = encodeState(currentState());
+      const newHash = "#b=" + encoded;
+      if (location.hash !== newHash) {
+        history.replaceState(null, "", newHash);
+      }
+    }
+
+    function debounce(fn, wait) {
+      let t;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), wait);
+      };
+    }
+    const debouncedSync = debounce(syncUrl, 200);
+
+    [htmlInput, setupInput, case1Input, case2Input, iterationsInput].forEach(el => {
+      el.addEventListener("input", debouncedSync);
+    });
+
+    function loadExternalScripts(doc) {
+      const scripts = Array.from(doc.querySelectorAll("script[src]"));
+      if (!scripts.length) return Promise.resolve();
+
+      return Promise.all(scripts.map(original => new Promise((resolve, reject) => {
+        // Recreate the tag so we can reliably listen for load/error.
+        const s = doc.createElement("script");
+        s.src = original.src;
+        s.async = false;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error(`Failed to load script: ${original.src}`));
+        original.replaceWith(s);
+      })));
+    }
+
+    function createSandbox(html) {
+      const iframe = document.createElement("iframe");
+      iframe.sandbox = "allow-scripts allow-same-origin";
+      iframe.style.display = "none";
+      document.body.appendChild(iframe);
+      const doc = iframe.contentDocument;
+      doc.open();
+      doc.write(`<!doctype html><html><body>${html}</body></html>`);
+      doc.close();
+      const ready = loadExternalScripts(doc);
+      return { iframe, ready };
+    }
+
+    async function runCase(html, setupCode, caseCode, iterations) {
+      const { iframe, ready } = createSandbox(html);
+      await ready;
+      const win = iframe.contentWindow;
+
+      // Build a runner inside one eval so setup vars are closed over and always visible to the case.
+      const factory = win.eval(`(function(iterations){
+        ${setupCode || ""}
+        const baseHTML = document.body.innerHTML;
+        return function() {
+          document.body.innerHTML = baseHTML;
+          const start = performance.now();
+          for (let i = 0; i < iterations; i++) {
+            ${caseCode || ""}
+          }
+          return performance.now() - start;
+        };
+      })`);
+
+      const runner = factory(iterations);
+      const total = runner();
+      iframe.remove();
+      return { total, per: total / iterations };
+    }
+
+    function format(ms) {
+      return ms.toFixed(2) + " ms";
+    }
+
+    async function runBenchmark() {
+      errorsEl.style.display = "none";
+      resultsEl.innerHTML = "";
+      progressEl.textContent = "Running...";
+      runBtn.disabled = true;
+      shareBtn.disabled = true;
+      syncUrl();
+
+      const state = currentState();
+      try {
+        const case1 = await runCase(state.html, state.setup, state.case1, state.iterations);
+        progressEl.textContent = "Case 2...";
+        const case2 = await runCase(state.html, state.setup, state.case2, state.iterations);
+
+        const runs = [
+          { name: "Case 1", ...case1 },
+          { name: "Case 2", ...case2 }
+        ];
+        const best = Math.min(...runs.map(r => r.total));
+        resultsEl.innerHTML = runs.map(r => {
+          const ratio = (r.total / best);
+          const isBest = r.total === best;
+          return `<div class="card ${isBest ? "best" : ""}">
+            <div class="metric">${format(r.total)}</div>
+            <div class="sub">${r.name} total (${state.iterations} iterations)</div>
+            <div class="badges">
+              <span class="badge">per run: ${format(r.per)}</span>
+              <span class="badge ${isBest ? "good" : ""}">${isBest ? "fastest" : ratio.toFixed(2) + "x slower"}</span>
+            </div>
+          </div>`;
+        }).join("");
+        progressEl.textContent = "Done";
+      } catch (err) {
+        errorsEl.textContent = String(err.stack || err);
+        errorsEl.style.display = "block";
+        progressEl.textContent = "Error";
+      } finally {
+        runBtn.disabled = false;
+        shareBtn.disabled = false;
+      }
+    }
+
+    runBtn.addEventListener("click", runBenchmark);
+
+    shareBtn.addEventListener("click", async () => {
+      syncUrl();
+      const url = location.href;
+      try {
+        await navigator.clipboard.writeText(url);
+        progressEl.textContent = "Link copied to clipboard";
+      } catch {
+        progressEl.textContent = "Copy failed; use the address bar";
+      }
+    });
+
+    function withDefault(str, fallback) {
+      return str && str.trim().length ? str : fallback;
+    }
+
+    (function init() {
+      const saved = loadStateFromUrl();
+      const merged = {
+        html: withDefault(saved && saved.html, defaultState.html),
+        setup: withDefault(saved && saved.setup, defaultState.setup),
+        case1: withDefault(saved && saved.case1, defaultState.case1),
+        case2: withDefault(saved && saved.case2, defaultState.case2),
+        iterations: saved && saved.iterations ? saved.iterations : defaultState.iterations
+      };
+      applyState(merged);
+      syncUrl();
+    })();
+  </script>
+</body>
+</html>
+
